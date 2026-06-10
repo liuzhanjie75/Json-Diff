@@ -1,0 +1,7 @@
+interface:
+  display_name: "JSON Diff"
+  short_description: "Compare JSON files and values precisely"
+  default_prompt: "Use $jsondiff to compare these JSON files and explain the differences."
+
+policy:
+  allow_implicit_invocation: true

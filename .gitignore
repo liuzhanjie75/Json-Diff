@@ -17,3 +17,5 @@ $RECYCLE.BIN/
 # Local verification artifacts
 .gocache-review/
 .build-review/
+.skill-install-test*/
+.gocache-skill-install/

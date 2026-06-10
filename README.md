@@ -49,6 +49,30 @@ go build -o jsondiff .
 
 On Windows, use `go build -o jsondiff.exe .`.
 
+## Install the Codex Skill
+
+The repository includes a source-based Skill installer. It compiles the binary
+locally and installs only the Skill files and platform binary; no prebuilt
+executable is downloaded.
+
+Windows:
+
+```powershell
+.\install-skill.bat
+```
+
+Linux and macOS:
+
+```bash
+chmod +x install-skill.sh
+./install-skill.sh
+```
+
+The default destination is `${CODEX_HOME}/skills/jsondiff`, or
+`~/.codex/skills/jsondiff` when `CODEX_HOME` is unset. Restart Codex or start a
+new session after installation. Running the installer again builds first and
+then replaces the existing Skill installation.
+
 ## Usage
 
 ```bash

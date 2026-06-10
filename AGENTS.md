@@ -31,6 +31,11 @@
 main.go                              ← 入口，仅调用 cmd.Execute()
 build.bat                            ← Windows 构建入口，更新根目录 jsondiff.exe
 build.sh                             ← Linux/macOS 构建入口，生成平台对应二进制
+install-skill.bat                    ← Windows Skill 安装器，编译后安装到 Codex skills
+install-skill.sh                     ← Linux/macOS Skill 安装器
+skill/jsondiff/
+  SKILL.md                           ← Codex Skill 工作流
+  agents/openai.yaml                 ← Skill UI 元数据
 cmd/
   root.go                            ← cobra 命令定义，串联 input→jsonpath→diff→render
 internal/
@@ -142,6 +147,7 @@ cmd/root.go
 - Each file should have a single responsibility — keep modules orthogonal.
 - `README.md` MUST remain the default English documentation; maintain the Chinese translation in `README.zh-CN.md`.
 - Keep tests beside the package they cover. Use `package diff` for private diff algorithms instead of adding production test wrappers.
+- Skill installers must build successfully before replacing an existing installation. Do not commit compiled binaries under `skill/jsondiff/bin/`.
 
 ## 构建与测试
 
