@@ -1,0 +1,15 @@
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "config": {
+    "debug": true,
+    "timeout": 30,
+    "retries": 3
+  },
+  "users": [
+    {"name": "alice", "age": 30},
+    {"name": "bob", "age": 25},
+    {"name": "charlie", "age": 35}
+  ],
+  "features": ["auth", "logging", "cache"]
+}
