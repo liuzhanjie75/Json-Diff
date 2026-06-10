@@ -5,6 +5,9 @@ type Options struct {
 	// KeyField is the field name used to identify matching objects in arrays.
 	// When set, array elements that are objects will be matched by this field's value.
 	KeyField string
+	// IgnoreArrayOrder compares arrays as multisets and suppresses move diffs.
+	// The option applies recursively to nested arrays.
+	IgnoreArrayOrder bool
 }
 
 // Compare recursively compares two JSON values with default options.

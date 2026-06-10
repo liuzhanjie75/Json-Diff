@@ -8,6 +8,7 @@
 - 递归对比 JSON 对象/数组/标量/null 四种类型
 - 终端彩色输出（Added=绿、Removed=红、Changed=黄、Moved=青）
 - 数组 LCS 移动检测
+- `--ignore-array-order` 递归无序数组比较（多重集合语义）
 - 数组对象匹配：`--key` 字段值精确匹配，或未指定 key 时使用 Jaccard 相似度自动匹配
 - JSON Path 过滤（`--path`）
 - 支持文件路径和内联 JSON 字符串两种输入
@@ -28,6 +29,8 @@
 
 ```
 main.go                              ← 入口，仅调用 cmd.Execute()
+build.bat                            ← Windows 构建入口，更新根目录 jsondiff.exe
+build.sh                             ← Linux/macOS 构建入口，生成平台对应二进制
 cmd/
   root.go                            ← cobra 命令定义，串联 input→jsonpath→diff→render
 internal/
@@ -112,6 +115,9 @@ cmd/root.go
 ### `--key` 精确匹配
 配置 `KeyField` 时，数组对象只能按该字段匹配，不得对未匹配对象回退到 Jaccard 相似度。匹配键使用 JSON 编码保留类型，因此字符串 `"1"`、数字 `1` 和布尔值 `true` 是不同键值。
 
+### 忽略数组顺序
+`Options.IgnoreArrayOrder` 启用后，所有数组（包括嵌套数组）按多重集合比较。元素顺序不产生差异，但重复数量仍然有意义。该模式不运行 LCS 和移动检测，不得生成 `OpMoved`；剩余差异只报告修改、新增和删除。默认模式必须继续保持顺序敏感。
+
 ### CanonicalJSON（`hash.go`）
 对象键按字母序排列后序列化，确保 `{"a":1,"b":2}` 和 `{"b":2,"a":1}` 哈希相同。这是数组元素精确匹配的基础。
 
@@ -140,8 +146,11 @@ cmd/root.go
 ## 构建与测试
 
 ```bash
-# 构建
-go build -o jsondiff .
+# Windows 构建
+.\build.bat
+
+# Linux/macOS 构建
+./build.sh
 
 # 运行所有测试
 go test ./...
@@ -162,6 +171,7 @@ go test ./internal/diff/ -cover
 - PowerShell 不支持 `&&`，用 `;` 分隔命令
 - PowerShell 中单引号包裹的内联 JSON 传给外部程序时引号会被剥离，建议在 CMD/Git Bash 中测试内联 JSON
 - 编译产物为 `jsondiff.exe`
+- `build.bat` 会先从 PATH 查找 Go，再回退到 `C:\Program Files\Go\bin\go.exe`
 
 ## 退出码约定
 

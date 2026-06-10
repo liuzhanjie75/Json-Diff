@@ -11,6 +11,7 @@ and colored terminal output.
 - Recursive comparison of objects, arrays, primitives, and `null`
 - Colored output for added, removed, changed, and moved values
 - LCS-based array move detection
+- Optional recursive array comparison without considering element order
 - Automatic array object matching using Jaccard key-set similarity
 - Exact array object matching with `--key`
 - JSON path filtering with `--path`
@@ -23,11 +24,30 @@ and colored terminal output.
 
 ## Build
 
+Windows:
+
+```powershell
+.\build.bat
+```
+
+Linux and macOS:
+
+```bash
+chmod +x build.sh
+./build.sh
+```
+
+The scripts can be called from any working directory and always build in the
+project root. `build.bat` updates `jsondiff.exe`; `build.sh` produces
+`jsondiff`, or `jsondiff.exe` when Go targets Windows.
+
+The equivalent direct Go command is:
+
 ```bash
 go build -o jsondiff .
 ```
 
-On Windows, the output is `jsondiff.exe`.
+On Windows, use `go build -o jsondiff.exe .`.
 
 ## Usage
 
@@ -43,6 +63,9 @@ jsondiff old.json new.json --path "database.connection"
 
 # Match array objects by an exact identity field
 jsondiff old.json new.json --key "id"
+
+# Treat arrays as unordered multisets
+jsondiff old.json new.json --ignore-array-order
 
 # Control terminal colors
 jsondiff old.json new.json --color always
@@ -60,10 +83,18 @@ JSON values are rejected.
 |---|---|---|
 | `--path` | Compare only the selected GJSON path | Entire document |
 | `--key` | Match array objects by an exact field value | Similarity matching |
+| `--ignore-array-order` | Compare arrays without considering element order | `false` |
 | `--color` | Color mode: `auto`, `always`, or `never` | `auto` |
 
 When `--key` is set, unmatched objects are not paired by similarity. Key values
 also preserve their JSON types, so string `"1"` and number `1` are distinct.
+
+With `--ignore-array-order`, arrays use recursive multiset semantics:
+
+- `[1, 2]` and `[2, 1]` are equal.
+- Duplicate counts remain significant.
+- Nested arrays also ignore order.
+- Move differences are suppressed; only changes, additions, and removals remain.
 
 ## Exit Codes
 
@@ -93,6 +124,10 @@ Array comparison runs in three stages:
    all unmatched values as additions or removals.
 
 The automatic similarity threshold is `0.5`.
+
+When `--ignore-array-order` is enabled, the LCS and move-detection stages are
+replaced by recursive unordered matching. The default mode remains
+order-sensitive.
 
 ## Development
 

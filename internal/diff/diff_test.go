@@ -338,6 +338,87 @@ func TestCompare_LargeIntArray(t *testing.T) {
 	}
 }
 
+func TestCompare_IgnoreArrayOrder(t *testing.T) {
+	tests := []struct {
+		name      string
+		old       string
+		new       string
+		wantCount int
+		wantOps   map[Op]int
+	}{
+		{
+			name:      "reordered primitives are equal",
+			old:       `[1,2]`,
+			new:       `[2,1]`,
+			wantCount: 0,
+		},
+		{
+			name:      "duplicate counts are significant",
+			old:       `[1,1,2]`,
+			new:       `[1,2,2]`,
+			wantCount: 2,
+			wantOps:   map[Op]int{OpRemoved: 1, OpAdded: 1},
+		},
+		{
+			name:      "nested arrays ignore order recursively",
+			old:       `[[1,2],[3,4]]`,
+			new:       `[[4,3],[2,1]]`,
+			wantCount: 0,
+		},
+		{
+			name:      "reordered objects are equal",
+			old:       `[{"id":"a","value":1},{"id":"b","value":2}]`,
+			new:       `[{"id":"b","value":2},{"id":"a","value":1}]`,
+			wantCount: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			old := parseJSON(tt.old)
+			newVal := parseJSON(tt.new)
+			diffs := CompareWithOpts(old, newVal, "$", Options{IgnoreArrayOrder: true})
+
+			if len(diffs) != tt.wantCount {
+				t.Fatalf("expected %d diffs, got %d: %+v", tt.wantCount, len(diffs), diffs)
+			}
+			if tt.wantOps != nil {
+				gotOps := make(map[Op]int)
+				for _, d := range diffs {
+					gotOps[d.Op]++
+				}
+				for op, want := range tt.wantOps {
+					if gotOps[op] != want {
+						t.Fatalf("op %v: expected %d, got %d", op, want, gotOps[op])
+					}
+				}
+			}
+			for _, d := range diffs {
+				if d.Op == OpMoved {
+					t.Fatalf("ignore-array-order must not report moves: %+v", diffs)
+				}
+			}
+		})
+	}
+}
+
+func TestCompare_IgnoreArrayOrderWithKeyReportsFieldChanges(t *testing.T) {
+	old := parseJSON(`[{"id":"a","value":1},{"id":"b","value":2}]`)
+	newVal := parseJSON(`[{"id":"b","value":3},{"id":"a","value":1}]`)
+
+	diffs := CompareWithOpts(old, newVal, "$", Options{
+		KeyField:         "id",
+		IgnoreArrayOrder: true,
+	})
+
+	if len(diffs) != 1 {
+		t.Fatalf("expected one field change, got %d: %+v", len(diffs), diffs)
+	}
+	if diffs[0].Op != OpChanged || diffs[0].Path != "$[0].value" {
+		t.Fatalf("unexpected diff: %+v", diffs[0])
+	}
+}
+
 func TestOp_String(t *testing.T) {
 	tests := []struct {
 		op   Op

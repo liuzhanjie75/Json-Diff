@@ -31,6 +31,9 @@ func compareArrays(old, new []interface{}, path string, ctx *Context) []DiffItem
 	if n == 0 {
 		return allRemoved(old, path)
 	}
+	if ctx.Opts.IgnoreArrayOrder {
+		return compareArraysUnordered(old, new, path, ctx)
+	}
 
 	// Build hash arrays for exact matching
 	oldHashes := make([]string, m)
@@ -78,6 +81,56 @@ func compareArrays(old, new []interface{}, path string, ctx *Context) []DiffItem
 		path, matched2Old, matched2New, &diffs)
 
 	// Remaining → Removed / Added
+	for _, oi := range unmatchedOld {
+		if !matched2Old[oi] {
+			diffs = append(diffs, DiffItem{
+				Op: OpRemoved, Path: fmt.Sprintf("%s[%d]", path, oi), OldValue: old[oi],
+			})
+		}
+	}
+	for _, nj := range unmatchedNew {
+		if !matched2New[nj] {
+			diffs = append(diffs, DiffItem{
+				Op: OpAdded, Path: fmt.Sprintf("%s[%d]", path, nj), NewValue: new[nj],
+			})
+		}
+	}
+
+	return diffs
+}
+
+func compareArraysUnordered(old, new []interface{}, path string, ctx *Context) []DiffItem {
+	matchedOld := make(map[int]bool)
+	matchedNew := make(map[int]bool)
+
+	for oi := range old {
+		for nj := range new {
+			if matchedNew[nj] {
+				continue
+			}
+			childPath := fmt.Sprintf("%s[%d]", path, nj)
+			if len(ctx.Dispatcher(old[oi], new[nj], childPath, ctx)) == 0 {
+				matchedOld[oi] = true
+				matchedNew[nj] = true
+				break
+			}
+		}
+	}
+
+	unmatchedOld := collectUnmatched(len(old), matchedOld)
+	unmatchedNew := collectUnmatched(len(new), matchedNew)
+	matched2Old := make(map[int]bool)
+	matched2New := make(map[int]bool)
+	var diffs []DiffItem
+
+	if ctx.Opts.KeyField != "" {
+		matchByKey(unmatchedOld, unmatchedNew, old, new, ctx.Opts.KeyField,
+			path, matched2Old, matched2New, &diffs, ctx)
+	} else {
+		matchBySimilarity(unmatchedOld, unmatchedNew, old, new,
+			path, matched2Old, matched2New, &diffs, ctx)
+	}
+
 	for _, oi := range unmatchedOld {
 		if !matched2Old[oi] {
 			diffs = append(diffs, DiffItem{

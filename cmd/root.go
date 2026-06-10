@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	pathFlag  string
-	colorFlag string
-	keyFlag   string
+	pathFlag             string
+	colorFlag            string
+	keyFlag              string
+	ignoreArrayOrderFlag bool
 )
 
 var rootCmd = &cobra.Command{
@@ -29,7 +30,8 @@ Examples:
   jsondiff '{"a":1}' '{"a":2}'
   jsondiff config.json '{"debug":true}'
   jsondiff server_old.json server_new.json --path "database.connection"
-  jsondiff old.json new.json --key "category"    # Match array objects by "category" field`,
+  jsondiff old.json new.json --key "category"
+  jsondiff old.json new.json --ignore-array-order`,
 	Args: cobra.ExactArgs(2),
 	RunE: runDiff,
 }
@@ -44,6 +46,7 @@ func init() {
 	rootCmd.Flags().StringVar(&pathFlag, "path", "", "Only compare the specified JSON sub-path (e.g. \"users.0.name\")")
 	rootCmd.Flags().StringVar(&colorFlag, "color", "auto", "Color mode: auto | always | never")
 	rootCmd.Flags().StringVar(&keyFlag, "key", "", "Field name to match array objects (e.g. \"id\", \"name\", \"category\")")
+	rootCmd.Flags().BoolVar(&ignoreArrayOrderFlag, "ignore-array-order", false, "Compare arrays without considering element order")
 }
 
 func runDiff(cmd *cobra.Command, args []string) error {
@@ -73,7 +76,10 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Compare
-	opts := diff.Options{KeyField: keyFlag}
+	opts := diff.Options{
+		KeyField:         keyFlag,
+		IgnoreArrayOrder: ignoreArrayOrderFlag,
+	}
 	diffs := diff.CompareWithOpts(oldVal, newVal, "$", opts)
 
 	// Render
